@@ -1,8 +1,10 @@
 name: Deploy production
 
+# Manual-only until AWS_DEPLOY_ROLE / PUBLIC_API_BASE / SLACK_WEBHOOK_URL
+# secrets and the ECS cluster referenced below actually exist. Re-add
+# `push: branches: [main]` once those are configured during production
+# integration - until then it fails on every push with no useful signal.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 env:
