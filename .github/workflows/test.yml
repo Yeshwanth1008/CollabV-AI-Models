@@ -78,10 +78,11 @@ jobs:
       - name: Initialize DB schema
         run: |
           python -c "
-          from collabv import auth, marketplace_db as mdb, database as db
+          from collabv import auth, marketplace_db as mdb, patent_marketplace_db as pmdb, database as db
           db.init_db('collabv_data.db')
           auth.init_auth_tables('collabv_data.db')
           mdb.init_marketplace_tables('collabv_data.db')
+          pmdb.init_patent_marketplace_tables('collabv_data.db')
           print('schema initialized')
           "
       - name: Seed fixtures (professors, listings, test accounts)
