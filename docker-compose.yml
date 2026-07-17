@@ -1,0 +1,76 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: ankane/pgvector:v0.5.1
+    environment:
+      POSTGRES_USER: collabv
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-collabv}
+      POSTGRES_DB: collabv
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infrastructure/init_pgvector.sql:/docker-entrypoint-initdb.d/init_pgvector.sql:ro
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U collabv -d collabv"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      PORT: 8000
+      DB_BACKEND: postgres
+      DATABASE_URL: postgresql://collabv:${POSTGRES_PASSWORD:-collabv}@postgres:5432/collabv
+      REDIS_URL: redis://redis:6379/0
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ENABLE_EMBEDDINGS: "true"
+      ENABLE_LLM_EXPLAIN: "true"
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
+      JWT_SECRET: ${JWT_SECRET:-please-change-in-production}
+      AUTH_REQUIRED: ${AUTH_REQUIRED:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports: ["8000:8000"]
+    volumes:
+      - ./iitm_professors_with_patents.json:/app/iitm_professors_with_patents.json:ro
+      - embeddings_cache:/app/.model_cache
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_BASE: http://localhost:8000
+    environment:
+      NEXT_PUBLIC_API_BASE: http://localhost:8000
+    depends_on:
+      - backend
+    ports: ["3000:3000"]
+
+  nginx:
+    image: nginx:1.25-alpine
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports: ["80:80"]
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  pgdata:
+  embeddings_cache:

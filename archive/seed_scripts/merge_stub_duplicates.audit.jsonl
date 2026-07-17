@@ -1,0 +1,14 @@
+{"feed_name": "DILLIPKUMAR CHAND", "faculty_name": "Dillip Kumar Chand", "stub_professor_id": "STUB-DILLIPKUMAR", "faculty_professor_id": "IITM-0132", "listings_reattributed": 3, "listings_duplicate_dropped": 0, "result": "merged", "ts": 1782715762.4385366}
+{"feed_name": "AMITAVA DAS GUPTA", "faculty_name": "Amitava Dasgupta", "stub_professor_id": "STUB-AMITAVA", "faculty_professor_id": "IITM-0249", "listings_reattributed": 3, "listings_duplicate_dropped": 0, "result": "merged", "ts": 1782715762.439044}
+{"feed_name": "SRINIVASA REDDY K", "faculty_name": "Srinivas Reddy K", "stub_professor_id": "STUB-SRINIVASA", "faculty_professor_id": "IITM-0445", "listings_reattributed": 5, "listings_duplicate_dropped": 0, "result": "merged", "ts": 1782715762.4391668}
+{"feed_name": "VENKATARATNAM G", "faculty_name": "Venkatarathnam G", "stub_professor_id": "STUB-VENKATARATNAM", "faculty_professor_id": "IITM-0452", "listings_reattributed": 1, "listings_duplicate_dropped": 0, "result": "merged", "ts": 1782715762.4391994}
+{"feed_name": "SAURAB SAXENA", "faculty_name": "Saurabh Saxena", "stub_professor_id": "STUB-SAURAB", "faculty_professor_id": "IITM-0266", "listings_reattributed": 1, "listings_duplicate_dropped": 0, "result": "merged", "ts": 1782715762.4392247}
+{"feed_name": "GANAPATHY KRISHNAMURTHI", "faculty_name": "Ganapathy Krishnamurthy", "stub_professor_id": "STUB-KRISHNAMURTHI", "faculty_professor_id": "IITM-0282", "listings_reattributed": 2, "listings_duplicate_dropped": 0, "result": "merged", "ts": 1782715762.439275}
+{"feed_name": "HARIKUMAR K C", "faculty_name": "Hari Kumar K.C", "stub_professor_id": "STUB-HARIKUMAR", "faculty_professor_id": "IITM-0464", "listings_reattributed": 1, "listings_duplicate_dropped": 0, "result": "merged", "ts": 1782715762.4392905}
+{"feed_name": "DILLIPKUMAR CHAND", "faculty_name": "Dillip Kumar Chand", "result": "skipped_already_merged", "ts": 1782715785.4706545}
+{"feed_name": "AMITAVA DAS GUPTA", "faculty_name": "Amitava Dasgupta", "result": "skipped_already_merged", "ts": 1782715785.4706607}
+{"feed_name": "SRINIVASA REDDY K", "faculty_name": "Srinivas Reddy K", "result": "skipped_already_merged", "ts": 1782715785.4706628}
+{"feed_name": "VENKATARATNAM G", "faculty_name": "Venkatarathnam G", "result": "skipped_already_merged", "ts": 1782715785.4706647}
+{"feed_name": "SAURAB SAXENA", "faculty_name": "Saurabh Saxena", "result": "skipped_already_merged", "ts": 1782715785.4706664}
+{"feed_name": "GANAPATHY KRISHNAMURTHI", "faculty_name": "Ganapathy Krishnamurthy", "result": "skipped_already_merged", "ts": 1782715785.4706683}
+{"feed_name": "HARIKUMAR K C", "faculty_name": "Hari Kumar K.C", "result": "skipped_already_merged", "ts": 1782715785.4706697}

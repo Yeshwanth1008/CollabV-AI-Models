@@ -1,0 +1,118 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt ruff mypy bandit
+      - name: Lint
+        run: ruff check collabv
+      - name: Type check (best effort)
+        run: mypy --ignore-missing-imports collabv || true
+      - name: Security scan
+        run: bandit -q -r collabv -ll
+      - name: Smoke test imports
+        run: python -c "from collabv import api, matching_engine, patent_scorer, collab_readiness, deal_scorer, contract_nlp, embeddings, explainer, retrainer, patent_scraper; print('OK')"
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci || npm install
+      - run: npm run typecheck
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_API_BASE: http://localhost:8000
+
+  # ─── Marketplace smoke ──────────────────────────────────────────────────
+  # Single CI gate for the marketplace surface. Exits non-zero on ANY assertion
+  # failure, so PRs that regress lifecycle/security/engine-readiness/inquiry
+  # round-trip get blocked here. See scripts/smoke-test-production.sh for the
+  # full assertion list.
+  marketplace-smoke:
+    runs-on: ubuntu-latest
+    needs: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install Python deps (including the dense-retrieval stack)
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-prod.txt
+      - name: Pre-warm sentence-transformers model
+        # The smoke must run against a healthy engine; this download happens
+        # here so the first /marketplace/status call doesn't time out.
+        run: python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+      - name: Initialize DB schema
+        run: |
+          python -c "
+          from collabv import auth, marketplace_db as mdb, database as db
+          db.init_db('collabv_data.db')
+          auth.init_auth_tables('collabv_data.db')
+          mdb.init_marketplace_tables('collabv_data.db')
+          print('schema initialized')
+          "
+      - name: Seed fixtures (professors, listings, buyers, test accounts)
+        # Each seed is idempotent. Order matters:
+        #   1. listings need professors loaded (engine bootstrap on startup
+        #      via main.py / api.py reads from data/ — relies on the repo's
+        #      committed prof JSON);
+        #   2. stub profiles needed for the (b) STUB_REQUIRES_ADMIN_ACTIVATION test;
+        #   3. synthetic + domain-matched buyers needed for buyer pool;
+        #   4. test_accounts needed for admin + inventor login.
+        run: |
+          python scripts/seed_draft_listings.py
+          python scripts/seed_patent_stub_profiles.py
+          python scripts/seed_synthetic_buyers.py
+          python scripts/seed_domain_matched_buyers.py
+          python scripts/seed_test_accounts.py
+      - name: Start uvicorn in background
+        run: |
+          nohup uvicorn collabv.api:app --host 127.0.0.1 --port 8000 \
+            > uvicorn.log 2>&1 &
+          echo $! > uvicorn.pid
+      - name: Wait for /health
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:8000/health > /dev/null; then
+              echo "backend up"; exit 0
+            fi
+            sleep 2
+          done
+          echo "backend did not come up within 120s"
+          cat uvicorn.log
+          exit 1
+      - name: Run marketplace smoke test
+        env:
+          APP_URL: http://127.0.0.1:8000
+        run: bash scripts/smoke-test-production.sh
+      - name: Show uvicorn log on failure
+        if: failure()
+        run: cat uvicorn.log
+      - name: Stop uvicorn
+        if: always()
+        run: |
+          if [ -f uvicorn.pid ]; then
+            kill "$(cat uvicorn.pid)" 2>/dev/null || true
+          fi

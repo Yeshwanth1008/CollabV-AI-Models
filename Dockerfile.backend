@@ -1,0 +1,57 @@
+# ─── Stage 1: Build deps + warm ML model cache ─────────────────────────────
+FROM python:3.11-slim AS build
+
+ENV PIP_NO_CACHE_DIR=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    TRANSFORMERS_OFFLINE=0
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential git \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+COPY requirements-prod.txt* ./
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt && \
+    if [ -f requirements-prod.txt ]; then pip install -r requirements-prod.txt; fi && \
+    pip install sentence-transformers==2.5.1 faiss-cpu==1.7.4
+
+# Pre-download the embedding model so first start is fast.
+RUN python -c "from sentence_transformers import SentenceTransformer; \
+    SentenceTransformer('all-MiniLM-L6-v2', cache_folder='/app/.model_cache')"
+
+# ─── Stage 2: Runtime ──────────────────────────────────────────────────────
+FROM python:3.11-slim AS runtime
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    SENTENCE_TRANSFORMERS_HOME=/app/.model_cache \
+    HF_HOME=/app/.model_cache
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl libgomp1 \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd -m -u 1000 collabv
+
+COPY --from=build /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=build /usr/local/bin /usr/local/bin
+COPY --from=build /app/.model_cache /app/.model_cache
+
+COPY collabv ./collabv
+COPY iitm_professors_nlp.json ./
+COPY *.xlsx ./
+
+RUN chown -R collabv:collabv /app
+USER collabv
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD curl -fsS http://localhost:8000/health || exit 1
+
+CMD ["uvicorn", "collabv.api:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]

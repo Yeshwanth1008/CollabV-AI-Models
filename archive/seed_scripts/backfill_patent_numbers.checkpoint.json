@@ -1,0 +1,17 @@
+{
+  "processed": [
+    "LIST-0BAE8596",
+    "LIST-1E0757C6",
+    "LIST-56D54610",
+    "LIST-607B2D3D",
+    "LIST-77D00D57",
+    "LIST-8251FBF4",
+    "LIST-8561F315",
+    "LIST-8EA11FD1",
+    "LIST-9D0B7DE0"
+  ],
+  "successful": 8,
+  "failed": 1,
+  "started_at": "2026-06-29T15:32:17",
+  "last_updated_at": "2026-06-29T15:32:34"
+}

@@ -1,0 +1,78 @@
+name: Deploy production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_BACKEND: collabv-backend
+  ECR_FRONTEND: collabv-frontend
+  ECS_CLUSTER: collabv-prod
+  ECS_BACKEND_SERVICE: collabv-backend
+  ECS_FRONTEND_SERVICE: collabv-frontend
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push backend
+        run: |
+          IMG=${{ steps.ecr.outputs.registry }}/${{ env.ECR_BACKEND }}
+          docker build -f Dockerfile.backend -t $IMG:${{ github.sha }} -t $IMG:latest .
+          docker push $IMG:${{ github.sha }}
+          docker push $IMG:latest
+
+      - name: Build & push frontend
+        run: |
+          IMG=${{ steps.ecr.outputs.registry }}/${{ env.ECR_FRONTEND }}
+          docker build -f frontend/Dockerfile \
+            --build-arg NEXT_PUBLIC_API_BASE=${{ secrets.PUBLIC_API_BASE }} \
+            -t $IMG:${{ github.sha }} -t $IMG:latest frontend
+          docker push $IMG:${{ github.sha }}
+          docker push $IMG:latest
+
+      - name: Deploy backend (blue/green)
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_BACKEND_SERVICE }} \
+            --force-new-deployment
+
+      - name: Deploy frontend
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_FRONTEND_SERVICE }} \
+            --force-new-deployment
+
+      - name: Wait for services to stabilize
+        run: |
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_BACKEND_SERVICE }} ${{ env.ECS_FRONTEND_SERVICE }}
+
+      - name: Slack notify
+        if: always()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            { "text": "CollabV AI deploy ${{ job.status }} for ${{ github.sha }}" }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

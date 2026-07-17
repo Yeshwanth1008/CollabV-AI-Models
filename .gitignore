@@ -1,0 +1,119 @@
+# ─── Secrets (NEVER commit) ──────────────────────────────────────────────
+.env
+.env.local
+.env.production
+.env.*.local
+*.pem
+*.key
+
+# Allow templates that don't contain real secrets
+!.env.example
+!.env.production.example
+
+# ─── Python ──────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+htmlcov/
+.coverage
+.coverage.*
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# ─── Node / Next.js ──────────────────────────────────────────────────────
+node_modules/
+.next/
+out/
+.turbo/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp.*
+
+# ─── Project artifacts ───────────────────────────────────────────────────
+collabv_data.db
+collabv_data.db-shm
+collabv_data.db-wal
+collabv_test.db
+*.db-journal
+
+# FAISS/numpy-fallback indices + meta (regenerated automatically at startup;
+# actual filenames per embeddings.py are "<name>.meta.json", not
+# "<name>.index.meta.json" - both patterns kept in case either shape occurs)
+collabv_embeddings.index
+collabv_embeddings.index.npy
+collabv_embeddings.meta.json
+collabv_embeddings.index.meta.json
+marketplace_patents.index
+marketplace_patents.index.npy
+marketplace_patents.meta.json
+marketplace_patents.index.meta.json
+marketplace_buyers.index
+marketplace_buyers.index.npy
+marketplace_buyers.meta.json
+marketplace_buyers.index.meta.json
+
+# Trained weights + ML artifacts
+collabv_weights.json
+*.pkl
+*.joblib
+.model_cache/
+
+# Backup files
+*.backup.json
+*.backup-*.json
+*.bak
+
+# Generated Excel reports
+collabv_v3_results_*.xlsx
+
+# ─── IDE ─────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ─── Terraform / AWS ─────────────────────────────────────────────────────
+infrastructure/.terraform/
+infrastructure/.terraform.lock.hcl
+infrastructure/terraform.tfstate
+infrastructure/terraform.tfstate.backup
+infrastructure/tfplan
+*.tfvars
+!*.tfvars.example
+
+# ─── Logs ────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ─── Local-only artifacts (not meant for version control) ────────────────
+# User-uploaded resumes (PII) - never commit real user data.
+uploads/
+# Local safety backups taken before the live-data-only migration / wipe.
+backups/
+archive/legacy_data_backups/
+# Retired static seed datasets, kept on local disk as archive per project
+# decision but too large/irrelevant to track in git (3MB+ each, superseded
+# by the live-data-only architecture - see API.md).
+iitm_professors_nlp.json
+iitm_professors_with_patents.json
+iitm_patents.json
+100_Companies_Collaboration_Schema.xlsx
+collabv/data/problem_statements.json
+# Claude Code local tool settings (machine-specific, not project source).
+.claude/
