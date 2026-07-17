@@ -117,3 +117,9 @@ iitm_patents.json
 collabv/data/problem_statements.json
 # Claude Code local tool settings (machine-specific, not project source).
 .claude/
+
+# ─── retrieval/ + search_platform/ generated artifacts ──────────────────
+# (*.pkl, *.db, .env already covered above)
+retrieval/name_variants.json
+retrieval/profile_cache.db
+retrieval/data/*.json
