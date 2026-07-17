@@ -216,6 +216,38 @@ See [infrastructure/README.md](infrastructure/README.md) for cost estimates
 
 ---
 
+## AI search & retrieval platform
+
+Two additional backend-only FastAPI services, meant to run alongside
+`collabv/api.py` and be called from this same frontend — neither serves a
+UI of its own:
+
+- **`retrieval/`** (port 8001) — single-professor lookup with live
+  enrichment (citations, h-index, co-authors) from OpenAlex, Semantic
+  Scholar, ORCID, CrossRef, and arXiv. See
+  [retrieval/SETUP.md](retrieval/SETUP.md).
+- **`search_platform/`** (port 8002) — hybrid RAG semantic search and
+  recommendations across every CollabV role (students, professors,
+  researchers, employees, companies, startups, institutes, alumni,
+  mentors), reading live from this repo's own data — no seed/mock data,
+  consistent with the live-data-only policy above. See
+  [search_platform/ARCHITECTURE.md](search_platform/ARCHITECTURE.md),
+  particularly §10 for integration details (base URLs, CORS, auth status).
+
+```bash
+pip install -r retrieval/requirements.txt -r search_platform/requirements.txt
+python retrieval/indexer.py && uvicorn retrieval.api:app --port 8001 --reload
+python -m search_platform.sync_from_collabv && uvicorn search_platform.api:app --port 8002 --reload
+```
+
+Both are early-stage: no authentication on any endpoint yet (see
+`search_platform/ARCHITECTURE.md`'s "What's deferred"), not yet
+containerized, and search_platform's Postgres vector search currently runs
+on an in-process NumPy fallback rather than pgvector (see
+`search_platform/INSTALL_PGVECTOR.md`).
+
+---
+
 ## What's still synthetic, what's real
 
 - **Real**: 543 IIT Madras professor profiles (names, departments, biographies,
